@@ -12,3 +12,9 @@ export const CONDITION_GUARD_VALUE = {
 } as const;
 
 export type ConditionGuardType = (typeof CONDITION_GUARD_VALUE)[keyof typeof CONDITION_GUARD_VALUE];
+
+export const UserStatus = {
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE',
+    BLOCKED: 'BLOCKED',
+} as const;
