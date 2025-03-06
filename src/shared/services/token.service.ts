@@ -36,4 +36,15 @@ export class TokenService {
             algorithms: ['HS256'],
         });
     }
+
+    async signPairToken(payload: any) {
+        const [accessToken, refreshToken] = await Promise.all([
+            this.signAccessToken(payload),
+            this.signRefreshToken(payload),
+        ])
+        return {
+            accessToken,
+            refreshToken
+        }
+    }
 }
