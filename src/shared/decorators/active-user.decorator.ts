@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import { TokenPayloadType } from "../types/jwt.type";
-import { REQUEST_CONSTANTS } from "../constants/request.constant";
+import { REQUEST_CONSTANTS } from "../constants/request.constants";
 
 export const ActiveUser = createParamDecorator((field: keyof TokenPayloadType | undefined, context: ExecutionContext) => {
     const request = context.switchToHttp().getRequest();

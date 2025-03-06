@@ -4,7 +4,7 @@ import { Reflector } from '@nestjs/core';
 import { AUTH_METADATA_KEY, AuthDecoratorPayloadType } from '../decorators/auth.decorator';
 import { ApiKeyGuard } from './api-key.guard';
 import { AccessTokenGuard } from './access-token.guard';
-import { AUTH_TYPE_VALUE, CONDITION_GUARD_VALUE } from '../constants/auth.constant';
+import { AUTH_TYPE_VALUE, CONDITION_GUARD_VALUE } from '../constants/auth.constants';
 
 
 @Injectable()

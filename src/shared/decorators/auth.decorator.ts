@@ -1,5 +1,5 @@
 import { SetMetadata } from "@nestjs/common";
-import { AuthType, CONDITION_GUARD_VALUE, ConditionGuardType } from "../constants/auth.constant";
+import { AuthType, CONDITION_GUARD_VALUE, ConditionGuardType } from "../constants/auth.constants";
 export const AUTH_METADATA_KEY = 'auth_metadata_key';
 export interface AuthDecoratorPayloadType {
     authType: AuthType[];

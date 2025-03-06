@@ -1,7 +1,7 @@
 
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { TokenService } from '../services/token.service';
-import { REQUEST_CONSTANTS } from '../constants/request.constant';
+import { REQUEST_CONSTANTS } from '../constants/request.constants';
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {

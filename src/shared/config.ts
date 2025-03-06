@@ -21,7 +21,11 @@ const configEnvSchema = zod.object({
     JWT_ACCESS_TOKEN_EXPIRE: zod.string(),
     JWT_REFRESH_TOKEN_PRIVATE_KEY: zod.string(),
     JWT_ACCESS_TOKEN_PRIVATE_KEY: zod.string(),
-    API_KEY: zod.string()
+    API_KEY: zod.string(),
+    ADMIN_EMAIL: zod.string(),
+    ADMIN_PASSWORD: zod.string(),
+    ADMIN_NAME: zod.string(),
+    ADMIN_PHONE: zod.string(),
 });
 
 const configEnvInstance = configEnvSchema.safeParse(process.env);
