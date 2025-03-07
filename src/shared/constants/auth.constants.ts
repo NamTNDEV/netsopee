@@ -19,7 +19,9 @@ export const UserStatus = {
     BLOCKED: 'BLOCKED',
 } as const;
 
-export const VERIFICATION_CODE_TYPE = {
+export const OTP_TYPE_VALUE = {
     REGISTER: 'REGISTER',
     FORGOT_PASSWORD: 'FORGOT_PASSWORD',
 } as const;
+
+export type OtpType = (typeof OTP_TYPE_VALUE)[keyof typeof OTP_TYPE_VALUE];

@@ -1,4 +1,4 @@
-import { UserStatus, VERIFICATION_CODE_TYPE } from "src/shared/constants/auth.constants";
+import { UserStatus, OTP_TYPE_VALUE } from "src/shared/constants/auth.constants";
 import { UserSchema } from "src/shared/models/shared-user.models";
 import { z } from "zod";
 
@@ -10,6 +10,7 @@ export const RegisterBodySchema = UserSchema.pick({
 })
     .extend({
         confirmPassword: z.string().min(6).max(100),
+        code: z.string().length(6),
     })
     .strict()
     .superRefine(({ password, confirmPassword }, ctx) => {
@@ -35,7 +36,7 @@ export const VerificationCodeSchema = z.object({
     id: z.number(),
     email: z.string().email(),
     code: z.string().length(6),
-    type: z.enum([VERIFICATION_CODE_TYPE.REGISTER, VERIFICATION_CODE_TYPE.FORGOT_PASSWORD]),
+    type: z.enum([OTP_TYPE_VALUE.REGISTER, OTP_TYPE_VALUE.FORGOT_PASSWORD]),
     expiresAt: z.date(),
     createdAt: z.date(),
 });
