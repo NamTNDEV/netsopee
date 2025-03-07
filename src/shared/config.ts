@@ -26,6 +26,7 @@ const configEnvSchema = zod.object({
     ADMIN_PASSWORD: zod.string(),
     ADMIN_NAME: zod.string(),
     ADMIN_PHONE: zod.string(),
+    OTP_EXPIRE: zod.string(),
 });
 
 const configEnvInstance = configEnvSchema.safeParse(process.env);

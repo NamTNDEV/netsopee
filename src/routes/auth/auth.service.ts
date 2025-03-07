@@ -3,7 +3,7 @@ import { RoleService } from './role.service';
 import { HashService } from 'src/shared/services/hash.service';
 import { isNotFoundPrismaError, usUniqueConstraintPrismaError } from 'src/shared/helpers';
 import { TokenService } from 'src/shared/services/token.service';
-import { RegisterBodyType } from './auth.model';
+import { RegisterBodyType, SendOTPBodyType } from './auth.model';
 import { AuthRepository } from './auth.repository';
 
 @Injectable()
@@ -50,6 +50,13 @@ export class AuthService {
                 throw new ConflictException('Email already exists');
             }
             throw error;
+        }
+    }
+
+    async sendOTP(body: SendOTPBodyType) {
+        console.log('sendOTP:::', body);
+        return {
+            message: 'OTP sent'
         }
     }
 

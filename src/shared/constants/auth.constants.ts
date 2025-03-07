@@ -18,3 +18,8 @@ export const UserStatus = {
     INACTIVE: 'INACTIVE',
     BLOCKED: 'BLOCKED',
 } as const;
+
+export const VERIFICATION_CODE_TYPE = {
+    REGISTER: 'REGISTER',
+    FORGOT_PASSWORD: 'FORGOT_PASSWORD',
+} as const;
