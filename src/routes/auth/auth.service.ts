@@ -10,6 +10,7 @@ import { VerificationCodeType } from '@prisma/client';
 import { addMilliseconds } from 'date-fns';
 import ms from 'ms';
 import configEnv from 'src/shared/config';
+import { EmailService } from 'src/shared/services/email.service';
 
 
 @Injectable()
@@ -19,7 +20,8 @@ export class AuthService {
         private readonly tokenService: TokenService,
         private readonly hashService: HashService,
         private readonly authRepository: AuthRepository,
-        private readonly sharedUserRepository: SharedUserRepository
+        private readonly sharedUserRepository: SharedUserRepository,
+        private readonly emailService: EmailService
     ) { }
 
     // async generateTokenPair(userId: number) {
@@ -101,13 +103,21 @@ export class AuthService {
             ]);
         }
         const otpCode = generateVerificationCode();
-        const verificationCode = await this.authRepository.saveVerificationCode({
+        await this.authRepository.saveVerificationCode({
             email: body.email,
             code: String(otpCode),
             type: VerificationCodeType.REGISTER,
             expiresAt: addMilliseconds(new Date(), ms(configEnv.OTP_EXPIRE))
         });
-        return verificationCode;
+
+        //Send email
+        await this.emailService.sendEmail({
+            content: otpCode + '',
+            email: body.email,
+            subject: 'OTP Code'
+        });
+
+        return "OTP code has been sent to your email, please check your email";
     }
 
     // async login(body: any) {

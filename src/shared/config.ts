@@ -14,6 +14,7 @@ if (!fs.existsSync(path.resolve('.env'))) {
 }
 
 const configEnvSchema = zod.object({
+    HOST: zod.string(),
     DATABASE_URL: zod.string(),
     PORT: zod.string(),
     CLIENT_URL: zod.string(),
@@ -27,6 +28,7 @@ const configEnvSchema = zod.object({
     ADMIN_NAME: zod.string(),
     ADMIN_PHONE: zod.string(),
     OTP_EXPIRE: zod.string(),
+    RESEND_API_KEY: zod.string(),
 });
 
 const configEnvInstance = configEnvSchema.safeParse(process.env);

@@ -8,8 +8,9 @@ import { AccessTokenGuard } from './guards/access-token.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthenticationGuard } from './guards/authentication.guard';
 import { SharedUserRepository } from './repositories/shared-user.repositories';
+import { EmailService } from './services/email.service';
 
-const SharedServices = [PrismaService, HashService, TokenService];
+const SharedServices = [PrismaService, HashService, TokenService, EmailService];
 const SharedRepositories = [SharedUserRepository];
 
 @Global()
