@@ -8,3 +8,7 @@ export const usUniqueConstraintPrismaError = (error: any): error is Prisma.Prism
 export const isNotFoundPrismaError = (error: any): error is Prisma.PrismaClientKnownRequestError => {
     return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025';
 }
+
+export const generateVerificationCode = () => {
+    return Math.floor(100000 + Math.random() * 900000);
+};
