@@ -1,9 +1,9 @@
-import { ConflictException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import { ConflictException, HttpException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import { RoleService } from './role.service';
 import { HashService } from 'src/shared/services/hash.service';
 import { generateVerificationCode, isNotFoundPrismaError, usUniqueConstraintPrismaError } from 'src/shared/helpers';
 import { TokenService } from 'src/shared/services/token.service';
-import { LoginBodyType, RegisterBodyType, SendOTPBodyType } from './auth.model';
+import { LoginBodyType, RefreshTokenBodyType, RegisterBodyType, SendOTPBodyType } from './auth.model';
 import { AuthRepository } from './auth.repository';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repositories';
 import { VerificationCodeType } from '@prisma/client';
@@ -177,26 +177,37 @@ export class AuthService {
     //     }
     // }
 
-    // async refreshToken(body: any) {
-    //     try {
-    //         const decodedRefreshToken = await this.tokenService.verifyRefreshToken(body.refreshToken);
-    //         await this.prismaService.refreshToken.findUniqueOrThrow({
-    //             where: {
-    //                 token: body.refreshToken
-    //             }
-    //         });
-    //         await this.prismaService.refreshToken.delete({
-    //             where: {
-    //                 token: body.refreshToken
-    //             }
-    //         });
-    //         const tokenPair = await this.generateTokenPair(decodedRefreshToken.userId);
-    //         return tokenPair;
-    //     } catch (error) {
-    //         if (isNotFoundPrismaError(error)) {
-    //             throw new UnauthorizedException('Refresh token has been revoked');
-    //         }
-    //         throw new UnauthorizedException('Invalid refresh token');
-    //     }
-    // }
+    async refreshToken(body: RefreshTokenBodyType & { userAgent: string, ip: string }) {
+        try {
+            const { userId } = await this.tokenService.verifyRefreshToken(body.refreshToken);
+            const refreshTokenResult = await this.authRepository.findRefreshTokeWithUserAndRole(body.refreshToken);
+
+            if (!refreshTokenResult) {
+                throw new UnauthorizedException('Refresh token has been revoked');
+            }
+
+            const $updatedDevice = this.authRepository.updateDevice(refreshTokenResult.deviceId, {
+                ip: body.ip,
+                userAgent: body.userAgent
+            });
+
+            const $deleteRefreshToken = this.authRepository.deleteRefreshToken(body.refreshToken);
+
+            const $tokenPair = this.generateTokenPair({
+                userId: userId,
+                roleId: refreshTokenResult.user.roleId,
+                roleName: refreshTokenResult.user.role.name,
+                deviceId: refreshTokenResult.deviceId
+            });
+
+            const [, , tokenPair] = await Promise.all([$updatedDevice, $deleteRefreshToken, $tokenPair]);
+
+            return tokenPair;
+        } catch (error) {
+            if (error instanceof HttpException) {
+                throw error;
+            }
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+    }
 }

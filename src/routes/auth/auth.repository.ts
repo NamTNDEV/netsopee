@@ -21,6 +21,15 @@ export class AuthRepository {
         });
     }
 
+    async findUserWithRole(uniqueObject: { email: string } | { id: number }): Promise<UserType & { role: RoleType } | null> {
+        return await this.prismaService.user.findUnique({
+            where: uniqueObject,
+            include: {
+                role: true
+            }
+        });
+    }
+
     async saveVerificationCode(payload: Pick<VerificationCodeType, 'code' | 'email' | 'type' | 'expiresAt'>) {
         return await this.prismaService.verificationCode.upsert({
             where: {
@@ -41,6 +50,21 @@ export class AuthRepository {
         });
     }
 
+    async createDevice(data: Pick<DeviceType, 'userId' | 'userAgent' | 'ip'> & Partial<Pick<DeviceType, 'lastActive' | 'isActive'>>) {
+        return await this.prismaService.device.create({
+            data
+        });
+    }
+
+    async updateDevice(id: number, data: Partial<DeviceType>): Promise<DeviceType> {
+        return await this.prismaService.device.update({
+            where: {
+                id
+            },
+            data
+        });
+    }
+
     async createRefreshToken(data:
         Omit<RefreshTokenType, 'createdAt'>
         // { userId: number, token: string, expiresAt: Date, deviceId: number }
@@ -50,17 +74,25 @@ export class AuthRepository {
         });
     }
 
-    async createDevice(data: Pick<DeviceType, 'userId' | 'userAgent' | 'ip'> & Partial<Pick<DeviceType, 'lastActive' | 'isActive'>>) {
-        return await this.prismaService.device.create({
-            data
+    async findRefreshTokeWithUserAndRole(token: string): Promise<RefreshTokenType & { user: UserType & { role: RoleType } } | null> {
+        return await this.prismaService.refreshToken.findUnique({
+            where: {
+                token
+            },
+            include: {
+                user: {
+                    include: {
+                        role: true
+                    }
+                }
+            }
         });
     }
 
-    async findUserWithRole(uniqueObject: { email: string } | { id: number }): Promise<UserType & { role: RoleType } | null> {
-        return await this.prismaService.user.findUnique({
-            where: uniqueObject,
-            include: {
-                role: true
+    async deleteRefreshToken(token: string): Promise<RefreshToken> {
+        return await this.prismaService.refreshToken.delete({
+            where: {
+                token
             }
         });
     }
