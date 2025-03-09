@@ -140,8 +140,6 @@ model Device {
   createdAt     DateTime       @default(now())
   isActive      Boolean        @default(true) // Trạng thái thiết bị (đang login hay đã logout)
   refreshTokens RefreshToken[] // Liên kết 1-n với RefreshToken
-
-   @@unique([userId, userAgent, ip], name: "userId_userAgent_ip")
 }
 
 model RefreshToken {

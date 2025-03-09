@@ -21,6 +21,15 @@ export class AuthRepository {
         });
     }
 
+    async createGoogleUser(user: Pick<UserType, 'email' | 'name' | 'password' | 'phoneNumber' | 'avatar' | 'roleId'>): Promise<UserType & { role: RoleType }> {
+        return await this.prismaService.user.create({
+            data: user,
+            include: {
+                role: true
+            }
+        });
+    }
+
     async findUserWithRole(uniqueObject: { email: string } | { id: number }): Promise<UserType & { role: RoleType } | null> {
         return await this.prismaService.user.findUnique({
             where: uniqueObject,
@@ -50,21 +59,8 @@ export class AuthRepository {
         });
     }
 
-    async createOrUpdateDevice(data: Pick<DeviceType, 'userId' | 'userAgent' | 'ip'> & Partial<Pick<DeviceType, 'lastActive' | 'isActive'>>) {
-        return await this.prismaService.device.upsert({
-            where: {
-                userId_userAgent_ip: {
-                    userId: data.userId,
-                    userAgent: data.userAgent,
-                    ip: data.ip
-                }
-            },
-            create: data,
-            update: {
-                lastActive: new Date(),
-                isActive: true
-            }
-        });
+    async createDevice(data: Pick<DeviceType, 'userId' | 'userAgent' | 'ip'> & Partial<Pick<DeviceType, 'lastActive' | 'isActive'>>) {
+        return await this.prismaService.device.create({ data });
     }
 
     async updateDevice(id: number, data: Partial<DeviceType>): Promise<DeviceType> {

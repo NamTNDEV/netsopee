@@ -1,4 +1,4 @@
-import { ConflictException, HttpException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import { HttpException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import { HashService } from 'src/shared/services/hash.service';
 import { generateVerificationCode, isNotFoundPrismaError, usUniqueConstraintPrismaError } from 'src/shared/helpers';
 import { TokenService } from 'src/shared/services/token.service';
@@ -9,7 +9,7 @@ import { addMilliseconds } from 'date-fns';
 import ms from 'ms';
 import configEnv from 'src/shared/config';
 import { EmailService } from 'src/shared/services/email.service';
-import { RoleService } from '../role.service';
+import { RoleService } from './role.service';
 import { AuthRepository } from '../auth.repository';
 
 
@@ -142,7 +142,7 @@ export class AuthService {
             throw new UnauthorizedException('Email or password is incorrect');
         }
 
-        const deviceResult = await this.authRepository.createOrUpdateDevice({
+        const deviceResult = await this.authRepository.createDevice({
             ip: body.ip,
             userAgent: body.userAgent,
             userId: user.id
@@ -164,7 +164,8 @@ export class AuthService {
             const deleteRefreshToken = await this.authRepository.deleteRefreshToken(body.refreshToken);
 
             await this.authRepository.updateDevice(deleteRefreshToken.deviceId, {
-                isActive: false
+                isActive: false,
+                lastActive: new Date()
             });
 
             return {
