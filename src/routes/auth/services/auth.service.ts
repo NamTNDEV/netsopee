@@ -1,16 +1,16 @@
 import { ConflictException, HttpException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
-import { RoleService } from './role.service';
 import { HashService } from 'src/shared/services/hash.service';
 import { generateVerificationCode, isNotFoundPrismaError, usUniqueConstraintPrismaError } from 'src/shared/helpers';
 import { TokenService } from 'src/shared/services/token.service';
-import { LoginBodyType, LogoutBodyType, RefreshTokenBodyType, RegisterBodyType, SendOTPBodyType } from './auth.model';
-import { AuthRepository } from './auth.repository';
+import { LoginBodyType, LogoutBodyType, RefreshTokenBodyType, RegisterBodyType, SendOTPBodyType } from '../auth.model';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repositories';
 import { VerificationCodeType } from '@prisma/client';
 import { addMilliseconds } from 'date-fns';
 import ms from 'ms';
 import configEnv from 'src/shared/config';
 import { EmailService } from 'src/shared/services/email.service';
+import { RoleService } from '../role.service';
+import { AuthRepository } from '../auth.repository';
 
 
 @Injectable()
