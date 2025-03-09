@@ -50,9 +50,20 @@ export class AuthRepository {
         });
     }
 
-    async createDevice(data: Pick<DeviceType, 'userId' | 'userAgent' | 'ip'> & Partial<Pick<DeviceType, 'lastActive' | 'isActive'>>) {
-        return await this.prismaService.device.create({
-            data
+    async createOrUpdateDevice(data: Pick<DeviceType, 'userId' | 'userAgent' | 'ip'> & Partial<Pick<DeviceType, 'lastActive' | 'isActive'>>) {
+        return await this.prismaService.device.upsert({
+            where: {
+                userId_userAgent_ip: {
+                    userId: data.userId,
+                    userAgent: data.userAgent,
+                    ip: data.ip
+                }
+            },
+            create: data,
+            update: {
+                lastActive: new Date(),
+                isActive: true
+            }
         });
     }
 

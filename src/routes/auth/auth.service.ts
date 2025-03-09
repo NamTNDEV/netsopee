@@ -3,7 +3,7 @@ import { RoleService } from './role.service';
 import { HashService } from 'src/shared/services/hash.service';
 import { generateVerificationCode, isNotFoundPrismaError, usUniqueConstraintPrismaError } from 'src/shared/helpers';
 import { TokenService } from 'src/shared/services/token.service';
-import { LoginBodyType, RefreshTokenBodyType, RegisterBodyType, SendOTPBodyType } from './auth.model';
+import { LoginBodyType, LogoutBodyType, RefreshTokenBodyType, RegisterBodyType, SendOTPBodyType } from './auth.model';
 import { AuthRepository } from './auth.repository';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repositories';
 import { VerificationCodeType } from '@prisma/client';
@@ -142,7 +142,7 @@ export class AuthService {
             throw new UnauthorizedException('Email or password is incorrect');
         }
 
-        const newDevice = await this.authRepository.createDevice({
+        const deviceResult = await this.authRepository.createOrUpdateDevice({
             ip: body.ip,
             userAgent: body.userAgent,
             userId: user.id
@@ -152,30 +152,31 @@ export class AuthService {
             userId: user.id,
             roleId: user.roleId,
             roleName: user.role.name,
-            deviceId: newDevice.id
+            deviceId: deviceResult.id
         });
         return tokenPair;
     }
 
-    // async logout(body: any) {
-    //     try {
-    //         await this.tokenService.verifyRefreshToken(body.refreshToken);
-    //         await this.prismaService.refreshToken.delete({
-    //             where: {
-    //                 token: body.refreshToken
-    //             }
-    //         });
+    async logout(body: LogoutBodyType) {
+        try {
+            await this.tokenService.verifyRefreshToken(body.refreshToken);
 
-    //         return {
-    //             message: 'Logout successful'
-    //         }
-    //     } catch (error) {
-    //         if (isNotFoundPrismaError(error)) {
-    //             throw new UnauthorizedException('Refresh token has been revoked');
-    //         }
-    //         throw new UnauthorizedException('Invalid refresh token');
-    //     }
-    // }
+            const deleteRefreshToken = await this.authRepository.deleteRefreshToken(body.refreshToken);
+
+            await this.authRepository.updateDevice(deleteRefreshToken.deviceId, {
+                isActive: false
+            });
+
+            return {
+                message: 'Logout successful'
+            }
+        } catch (error) {
+            if (isNotFoundPrismaError(error)) {
+                throw new UnauthorizedException('Refresh token has been revoked');
+            }
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+    }
 
     async refreshToken(body: RefreshTokenBodyType & { userAgent: string, ip: string }) {
         try {
