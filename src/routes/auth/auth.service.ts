@@ -3,7 +3,7 @@ import { RoleService } from './role.service';
 import { HashService } from 'src/shared/services/hash.service';
 import { generateVerificationCode, isNotFoundPrismaError, usUniqueConstraintPrismaError } from 'src/shared/helpers';
 import { TokenService } from 'src/shared/services/token.service';
-import { RegisterBodyType, SendOTPBodyType } from './auth.model';
+import { LoginBodyType, RegisterBodyType, SendOTPBodyType } from './auth.model';
 import { AuthRepository } from './auth.repository';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repositories';
 import { VerificationCodeType } from '@prisma/client';
@@ -24,22 +24,31 @@ export class AuthService {
         private readonly emailService: EmailService
     ) { }
 
-    // async generateTokenPair(userId: number) {
-    //     try {
-    //         const tokenPair = await this.tokenService.signPairToken({ userId });
-    //         const decodedRefreshToken = await this.tokenService.verifyRefreshToken(tokenPair.refreshToken);
-    //         await this.prismaService.refreshToken.create({
-    //             data: {
-    //                 userId: userId,
-    //                 token: tokenPair.refreshToken,
-    //                 expiresAt: new Date(decodedRefreshToken.exp * 1000)
-    //             }
-    //         });
-    //         return tokenPair;
-    //     } catch (error) {
-    //         throw error;
-    //     }
-    // }
+    async generateTokenPair(payload: {
+        userId: number;
+        roleId: number;
+        roleName: string;
+        deviceId: number;
+    }) {
+        try {
+            const tokenPair = await this.tokenService.signPairToken({
+                userId: payload.userId,
+                roleId: payload.roleId,
+                roleName: payload.roleName,
+                deviceId: payload.deviceId
+            });
+            const decodedRefreshToken = await this.tokenService.verifyRefreshToken(tokenPair.refreshToken);
+            await this.authRepository.createRefreshToken({
+                userId: decodedRefreshToken.userId,
+                token: tokenPair.refreshToken,
+                expiresAt: new Date(decodedRefreshToken.exp * 1000),
+                deviceId: payload.deviceId
+            });
+            return tokenPair;
+        } catch (error) {
+            throw error;
+        }
+    }
 
     async register(body: RegisterBodyType) {
         try {
@@ -117,29 +126,36 @@ export class AuthService {
             subject: 'OTP Code'
         });
 
-        return "OTP code has been sent to your email, please check your email";
+        return { message: "OTP code has been sent to your email, please check your email" };
     }
 
-    // async login(body: any) {
-    //     const user = await this.prismaService.user.findUnique({
-    //         where: {
-    //             email: body.email
-    //         }
-    //     })
+    async login(body: LoginBodyType & { userAgent: string, ip: string }) {
+        const user = await this.authRepository.findUserWithRole({ email: body.email });
 
-    //     if (!user) {
-    //         throw new UnauthorizedException('Email or password is incorrect');
-    //     }
+        if (!user) {
+            throw new UnauthorizedException('Email or password is incorrect');
+        }
 
-    //     const isPasswordValid = this.hashService.compare(body.password, user.password);
+        const isPasswordValid = this.hashService.compare(body.password, user.password);
 
-    //     if (!isPasswordValid) {
-    //         throw new UnauthorizedException('Email or password is incorrect');
-    //     }
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Email or password is incorrect');
+        }
 
-    //     const tokenPair = await this.generateTokenPair(user.id);
-    //     return tokenPair;
-    // }
+        const newDevice = await this.authRepository.createDevice({
+            ip: body.ip,
+            userAgent: body.userAgent,
+            userId: user.id
+        });
+
+        const tokenPair = await this.generateTokenPair({
+            userId: user.id,
+            roleId: user.roleId,
+            roleName: user.role.name,
+            deviceId: newDevice.id
+        });
+        return tokenPair;
+    }
 
     // async logout(body: any) {
     //     try {
