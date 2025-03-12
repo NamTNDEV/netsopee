@@ -8,6 +8,7 @@ import { RoleService } from "./role.service";
 import { HashService } from "src/shared/services/hash.service";
 import { v4 as uuidv4 } from 'uuid';
 import { AuthService } from "./auth.service";
+import { GoogleUserInfoError } from "../models/errors.model";
 
 @Injectable()
 export class GoogleService {
@@ -55,7 +56,7 @@ export class GoogleService {
         const oauth2 = google.oauth2({ version: 'v2', auth: this.oauth2Client });
         const { data } = await oauth2.userinfo.get();
         if (!data.email) {
-            throw new Error("Email not found from Google");
+            throw GoogleUserInfoError;
         }
         return data
     }

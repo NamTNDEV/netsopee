@@ -11,6 +11,7 @@ import configEnv from 'src/shared/config';
 import { EmailService } from 'src/shared/services/email.service';
 import { RoleService } from './role.service';
 import { AuthRepository } from '../auth.repository';
+import { EmailAlreadyExistsException, EmailNotFoundException, FailedToSendOTPException, InvalidOTPException, InvalidPasswordException, OTPExpiredException, RefreshTokenAlreadyUsedException, UnauthorizedAccessException } from '../models/errors.model';
 
 
 @Injectable()
@@ -60,21 +61,12 @@ export class AuthService {
             });
 
             if (!verificationCode) {
-                throw new UnprocessableEntityException([
-                    {
-                        message: 'Invalid verification code',
-                        path: 'code',
-                    }
-                ]);
+                throw InvalidOTPException;
             }
 
             //Kiểm tra otp code hết hạn ?
             if (verificationCode.expiresAt < new Date()) {
-                throw new UnprocessableEntityException([
-                    {
-                        message: 'Verification code has expired',
-                        path: 'code',
-                    }])
+                throw OTPExpiredException;
             }
 
             const hashedPassword = this.hashService.hash(body.password);
@@ -90,12 +82,7 @@ export class AuthService {
             return newUser;
         } catch (error) {
             if (usUniqueConstraintPrismaError(error)) {
-                throw new UnprocessableEntityException([
-                    {
-                        message: 'Email already exists',
-                        path: 'email',
-                    }
-                ]);
+                throw EmailAlreadyExistsException;
             }
             throw error;
         }
@@ -104,12 +91,7 @@ export class AuthService {
     async sendOTP(body: SendOTPBodyType) {
         const user = await this.sharedUserRepository.findUser({ email: body.email });
         if (user) {
-            throw new UnprocessableEntityException([
-                {
-                    path: 'email',
-                    message: 'Email has been registered'
-                }
-            ]);
+            throw EmailAlreadyExistsException;
         }
         const otpCode = generateVerificationCode();
         await this.authRepository.saveVerificationCode({
@@ -120,11 +102,15 @@ export class AuthService {
         });
 
         //Send email
-        await this.emailService.sendEmail({
+        const { error } = await this.emailService.sendEmail({
             content: otpCode + '',
             email: body.email,
             subject: 'OTP Code'
         });
+
+        if (error) {
+            throw FailedToSendOTPException;
+        }
 
         return { message: "OTP code has been sent to your email, please check your email" };
     }
@@ -133,13 +119,13 @@ export class AuthService {
         const user = await this.authRepository.findUserWithRole({ email: body.email });
 
         if (!user) {
-            throw new UnauthorizedException('Email or password is incorrect');
+            throw EmailNotFoundException;
         }
 
         const isPasswordValid = this.hashService.compare(body.password, user.password);
 
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Email or password is incorrect');
+            throw InvalidPasswordException;
         }
 
         const deviceResult = await this.authRepository.createDevice({
@@ -173,9 +159,9 @@ export class AuthService {
             }
         } catch (error) {
             if (isNotFoundPrismaError(error)) {
-                throw new UnauthorizedException('Refresh token has been revoked');
+                throw RefreshTokenAlreadyUsedException;
             }
-            throw new UnauthorizedException('Invalid refresh token');
+            throw UnauthorizedAccessException;
         }
     }
 
@@ -185,7 +171,7 @@ export class AuthService {
             const refreshTokenResult = await this.authRepository.findRefreshTokeWithUserAndRole(body.refreshToken);
 
             if (!refreshTokenResult) {
-                throw new UnauthorizedException('Refresh token has been revoked');
+                throw RefreshTokenAlreadyUsedException;
             }
 
             const $updatedDevice = this.authRepository.updateDevice(refreshTokenResult.deviceId, {
@@ -209,7 +195,7 @@ export class AuthService {
             if (error instanceof HttpException) {
                 throw error;
             }
-            throw new UnauthorizedException('Invalid refresh token');
+            throw UnauthorizedAccessException;
         }
     }
 }
