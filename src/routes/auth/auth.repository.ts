@@ -21,6 +21,13 @@ export class AuthRepository {
         });
     }
 
+    async updateUser(where: { id: number } | { email: string }, data: Partial<Omit<UserType, 'id'>>): Promise<UserType> {
+        return await this.prismaService.user.update({
+            where,
+            data
+        });
+    }
+
     async createGoogleUser(user: Pick<UserType, 'email' | 'name' | 'password' | 'phoneNumber' | 'avatar' | 'roleId'>): Promise<UserType & { role: RoleType }> {
         return await this.prismaService.user.create({
             data: user,
@@ -56,6 +63,12 @@ export class AuthRepository {
         Promise<VerificationCode | null> {
         return await this.prismaService.verificationCode.findUnique({
             where: uniqueObject,
+        });
+    }
+
+    async deleteVerificationCode(uniqueObject: { id: number } | { email: string, code: string, type: OtpType }): Promise<VerificationCodeType> {
+        return await this.prismaService.verificationCode.delete({
+            where: uniqueObject
         });
     }
 

@@ -11,15 +11,16 @@ export const RegisterBodySchema = UserSchema.pick({
 }).extend({
     confirmPassword: z.string().min(6).max(100),
     code: z.string().length(6),
-}).strict().superRefine(({ password, confirmPassword }, ctx) => {
-    if (password !== confirmPassword) {
-        ctx.addIssue({
-            code: 'custom',
-            path: ['confirmPassword'],
-            message: 'Password and Confirm Password must be the same',
-        });
-    }
-})
+}).strict()
+    .superRefine(({ password, confirmPassword }, ctx) => {
+        if (password !== confirmPassword) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['confirmPassword'],
+                message: 'Password and Confirm Password must be the same',
+            });
+        }
+    })
 
 export const RegisterResSchema = UserSchema.omit({
     password: true,
@@ -93,6 +94,24 @@ export const GoogleGetUrlResSchema = z.object({
     url: z.string(),
 })
 
+export const ForgotPasswordBodySchema = z
+    .object({
+        email: z.string().email(),
+        code: z.string().length(6),
+        newPassword: z.string().min(6).max(100),
+        confirmNewPassword: z.string().min(6).max(100),
+    })
+    .strict()
+    .superRefine(({ confirmNewPassword, newPassword }, ctx) => {
+        if (confirmNewPassword !== newPassword) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'New password and Confirm new password must be the same',
+                path: ['confirmNewPassword'],
+            })
+        }
+    })
+
 // Types:
 export type RegisterBodyType = z.infer<typeof RegisterBodySchema>;
 export type VerificationCodeType = z.infer<typeof VerificationCodeSchema>;
@@ -104,6 +123,7 @@ export type RefreshTokenType = z.infer<typeof RefreshTokenSchema>;
 export type RefreshTokenBodyType = z.infer<typeof RefreshTokenBodySchema>;
 export type LogoutBodyType = RefreshTokenBodyType;
 export type GoogleUrlStateType = z.infer<typeof GoogleUrlStateSchema>;
+export type ForgotPasswordBodyType = z.infer<typeof ForgotPasswordBodySchema>;
 
 
 

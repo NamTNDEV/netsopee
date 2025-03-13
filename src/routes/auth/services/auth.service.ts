@@ -2,7 +2,7 @@ import { HttpException, Injectable, UnauthorizedException, UnprocessableEntityEx
 import { HashService } from 'src/shared/services/hash.service';
 import { generateVerificationCode, isNotFoundPrismaError, usUniqueConstraintPrismaError } from 'src/shared/helpers';
 import { TokenService } from 'src/shared/services/token.service';
-import { LoginBodyType, LogoutBodyType, RefreshTokenBodyType, RegisterBodyType, SendOTPBodyType } from '../auth.model';
+import { ForgotPasswordBodyType, LoginBodyType, LogoutBodyType, RefreshTokenBodyType, RegisterBodyType, SendOTPBodyType } from '../auth.model';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repositories';
 import { VerificationCodeType } from '@prisma/client';
 import { addMilliseconds } from 'date-fns';
@@ -12,6 +12,7 @@ import { EmailService } from 'src/shared/services/email.service';
 import { RoleService } from './role.service';
 import { AuthRepository } from '../auth.repository';
 import { EmailAlreadyExistsException, EmailNotFoundException, FailedToSendOTPException, InvalidOTPException, InvalidPasswordException, OTPExpiredException, RefreshTokenAlreadyUsedException, UnauthorizedAccessException } from '../models/errors.model';
+import { OTP_TYPE_VALUE } from 'src/shared/constants/auth.constants';
 
 
 @Injectable()
@@ -54,30 +55,28 @@ export class AuthService {
     async register(body: RegisterBodyType) {
         try {
             //Kiểm tra otp code hợp lệ ? 
-            const verificationCode = await this.authRepository.findVerificationCode({
+            await this.verifyOTP({
                 email: body.email,
                 code: body.code,
-                type: VerificationCodeType.REGISTER
+                otpType: VerificationCodeType.REGISTER
             });
-
-            if (!verificationCode) {
-                throw InvalidOTPException;
-            }
-
-            //Kiểm tra otp code hết hạn ?
-            if (verificationCode.expiresAt < new Date()) {
-                throw OTPExpiredException;
-            }
 
             const hashedPassword = this.hashService.hash(body.password);
             const clientRole = await this.roleService.getClientRoleId();
-            const newUser = await this.authRepository.createUser({
-                email: body.email,
-                name: body.name,
-                phoneNumber: body.phoneNumber,
-                roleId: clientRole,
-                password: hashedPassword
-            });
+            const [newUser] = await Promise.all([
+                this.authRepository.createUser({
+                    email: body.email,
+                    name: body.name,
+                    phoneNumber: body.phoneNumber,
+                    roleId: clientRole,
+                    password: hashedPassword
+                }),
+                this.authRepository.deleteVerificationCode({
+                    email: body.email,
+                    code: body.code,
+                    type: VerificationCodeType.REGISTER
+                })
+            ])
 
             return newUser;
         } catch (error) {
@@ -90,14 +89,17 @@ export class AuthService {
 
     async sendOTP(body: SendOTPBodyType) {
         const user = await this.sharedUserRepository.findUser({ email: body.email });
-        if (user) {
+        if (body.type === OTP_TYPE_VALUE.REGISTER && user) {
             throw EmailAlreadyExistsException;
+        }
+        if (body.type === OTP_TYPE_VALUE.FORGOT_PASSWORD && !user) {
+            throw EmailNotFoundException
         }
         const otpCode = generateVerificationCode();
         await this.authRepository.saveVerificationCode({
             email: body.email,
             code: String(otpCode),
-            type: VerificationCodeType.REGISTER,
+            type: body.type,
             expiresAt: addMilliseconds(new Date(), ms(configEnv.OTP_EXPIRE))
         });
 
@@ -197,5 +199,42 @@ export class AuthService {
             }
             throw UnauthorizedAccessException;
         }
+    }
+
+    async forgotPassword(body: ForgotPasswordBodyType) {
+        const { email, code, newPassword } = body;
+        const user = await this.sharedUserRepository.findUser({ email });
+        if (!user) {
+            throw EmailNotFoundException;
+        }
+        await this.verifyOTP({
+            email,
+            code,
+            otpType: VerificationCodeType.FORGOT_PASSWORD
+        });
+        const hashedPassword = this.hashService.hash(newPassword);
+        await Promise.all([
+            await this.authRepository.updateUser({ id: user.id }, { password: hashedPassword }),
+            await this.authRepository.deleteVerificationCode({ email, code, type: VerificationCodeType.FORGOT_PASSWORD })
+        ]);
+        return { message: 'Password has been changed successfully' };
+    }
+
+    async verifyOTP({ email, code, otpType }: { email: string, code: string, otpType: VerificationCodeType }) {
+        const verificationCode = await this.authRepository.findVerificationCode({
+            email,
+            code,
+            type: otpType
+        });
+
+        if (!verificationCode) {
+            throw InvalidOTPException;
+        }
+
+        if (verificationCode.expiresAt < new Date()) {
+            throw OTPExpiredException;
+        }
+
+        return verificationCode;
     }
 }

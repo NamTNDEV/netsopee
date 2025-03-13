@@ -1,5 +1,5 @@
 import { createZodDto } from "nestjs-zod";
-import { GoogleGetUrlResSchema, LoginBodySchema, LoginResSchema, RefreshTokenBodySchema, RegisterBodySchema, RegisterResSchema, SendOTPBodySchema } from "./auth.model";
+import { ForgotPasswordBodySchema, GoogleGetUrlResSchema, LoginBodySchema, LoginResSchema, RefreshTokenBodySchema, RegisterBodySchema, RegisterResSchema, SendOTPBodySchema } from "./auth.model";
 import { MessageResDto } from "src/shared/dto/response.dto";
 
 export class RegisterBodyDto extends createZodDto(RegisterBodySchema) { }
@@ -13,3 +13,5 @@ export class RefreshTokenResDto extends LoginResDto { }
 export class LogoutBodyDto extends RefreshTokenBodyDto { }
 export class LogoutResDto extends MessageResDto { }
 export class GoogleGetUrlResDto extends createZodDto(GoogleGetUrlResSchema) { }
+export class ForgotPasswordBodyDto extends createZodDto(ForgotPasswordBodySchema) { }
+export class ForgotPasswordResDto extends MessageResDto { }
