@@ -109,7 +109,7 @@ export class AuthService {
             email: body.email,
             subject: 'OTP Code'
         });
-
+        console.log("Send email error::: ", error);
         if (error) {
             throw FailedToSendOTPException;
         }

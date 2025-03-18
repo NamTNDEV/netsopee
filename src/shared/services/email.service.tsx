@@ -14,10 +14,10 @@ export class EmailService {
 
     async sendEmail(payload: { email: string, content: string, subject: string }) {
         return this.resend.emails.send({
-            // from: `Netsopee <no-reply@${configEnv.HOST}>`,
-            from: 'Netsopee <onboarding@resend.dev>',
-            // to: [payload.email],
-            to: ['namtndev312002@gmail.com'],
+            from: `Netsopee <no-reply@${configEnv.RESEND_DOMAIN}>`,
+            // from: 'Netsopee <onboarding@resend.dev>',
+            to: [payload.email],
+            // to: ['namtndev312002@gmail.com'],
             subject: payload.subject,
             react: <OTPEmail otpCode={payload.content} title={payload.subject} />,
         });

@@ -29,6 +29,7 @@ const configEnvSchema = zod.object({
     ADMIN_PHONE: zod.string(),
     OTP_EXPIRE: zod.string(),
     RESEND_API_KEY: zod.string(),
+    RESEND_DOMAIN: zod.string(),
     GOOGLE_CLIENT_ID: zod.string(),
     GOOGLE_CLIENT_SECRET: zod.string(),
     GOOGLE_CLIENT_REDIRECT_URI: zod.string(),
